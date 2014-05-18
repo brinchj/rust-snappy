@@ -1,22 +1,25 @@
 #![feature(globs)]
+#![comment = "snappy bindings"]
+#![license = "MIT"]
+#![crate_type = "lib"]
 
 #[link(name = "snappy",
        vers = "0.1.0",
        uuid = "17d57f36-462f-49c8-a3e1-109a7a4296c8",
        url = "https://github.com/thestinger/rust-snappy")]
 
-#[comment = "snappy bindings"]
-#[license = "MIT"]
-#[crate_type = "lib"]
 
-// For testing:
-extern crate rand;
+#[cfg(test)]
 extern crate quickcheck;
+#[cfg(test)]
+extern crate rand;
+
 // For runtime:
 extern crate libc;
+extern crate alloc;
 
 use libc::{c_int, size_t, c_void};
-use std::rt::global_heap::malloc_raw;
+use alloc::libc_heap::malloc_raw;
 
 use std::c_vec::{CVec};
 
@@ -44,12 +47,12 @@ pub fn validate_compressed_buffer(src: &[u8]) -> bool {
     }
 }
 
-fn malloc(n: uint) -> (*mut u8, ~CVec<u8>) {
+fn malloc(n: uint) -> (*mut u8, CVec<u8>) {
     unsafe {
         assert!(n > 0);
         let mem = malloc_raw(n);
         let destroy = proc() { libc::free(mem as *mut c_void); };
-        (mem, ~CVec::new_with_dtor(mem as *mut u8, n, destroy))
+        (mem, CVec::new_with_dtor(mem as *mut u8, n, destroy))
     }
 }
 
